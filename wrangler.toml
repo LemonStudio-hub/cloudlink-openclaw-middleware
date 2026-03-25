@@ -17,11 +17,11 @@ OPENCLAW_RATE_WINDOW = "60"
 [[d1_databases]]
 binding = "DB"
 database_name = "cloudlink-middleware-db"
-database_id = "your-database-id"
+database_id = "54a1a4be-823f-46d1-9f0b-d7782ae071ee"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "your-kv-namespace-id"
+id = "7e59104ee87a42e0a1da5f425294be03"
 
 [[queues.producers]]
 binding = "OPENCLAW_QUEUE"
