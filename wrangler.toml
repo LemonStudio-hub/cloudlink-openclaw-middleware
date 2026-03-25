@@ -7,12 +7,15 @@ compatibility_flags = ["nodejs_compat"]
 ENVIRONMENT = "production"
 
 # OpenClaw 配置
-OPENCLAW_GATEWAY_URL = "ws://localhost:18789"
+OPENCLAW_GATEWAY_URL = "wss://gateway.openclaw.ai/ws"
 OPENCLAW_DEVICE_ID = "cloudlink-forum"
 OPENCLAW_CHANNELS = "slack,discord,telegram"
 OPENCLAW_THINKING = "medium"
 OPENCLAW_RATE_LIMIT = "100"
 OPENCLAW_RATE_WINDOW = "60"
+
+# 认证令牌（请在 Cloudflare Dashboard 中设置 Secrets）
+# OPENCLAW_AUTH_TOKEN = "your-auth-token-here"
 
 [[d1_databases]]
 binding = "DB"
