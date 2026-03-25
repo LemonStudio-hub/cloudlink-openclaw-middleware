@@ -65,11 +65,20 @@ export interface OpenClawEvent {
   payload: any
   seq?: number
   stateVersion?: number
+  message?: string
+  sessionId?: string
+  thinking?: string
 }
 
 // 论坛事件类型
+export type ForumEventType = 
+  | 'post_created' | 'post_updated' | 'post_deleted' | 'post_approved' | 'post_rejected'
+  | 'comment_added' | 'comment_updated' | 'comment_deleted' | 'comment_liked' | 'comment_approved' | 'comment_rejected'
+  | 'user_registered' | 'user_login' | 'user_updated' | 'user_role_changed' | 'user_deleted'
+  | 'notification_sent' | 'notification_batch'
+
 export interface ForumEvent {
-  type: 'post_created' | 'post_updated' | 'post_deleted' | 'comment_added' | 'comment_updated' | 'comment_deleted' | 'user_registered' | 'user_updated' | 'notification_sent'
+  type: ForumEventType
   data: any
   timestamp: number
   id: string

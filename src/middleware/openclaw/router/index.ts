@@ -44,7 +44,7 @@ export interface RouterStats {
 }
 
 export class OpenClawRouter {
-  private client: OpenClawClient | null = null
+  private client: OpenClawClient
   private handlers: Map<string, EventHandler[]> = new Map()
   private eventQueue: QueueItem[] = []
   private deadLetterQueue: QueueItem[] = []
@@ -79,10 +79,10 @@ export class OpenClawRouter {
 
   private initializeEventHandlers(): void {
     // 注册默认事件处理器
-    this.register('post_created', this.handlePostCreated.bind(this))
-    this.register('comment_added', this.handleCommentAdded.bind(this))
-    this.register('user_registered', this.handleUserRegistered.bind(this))
-    this.register('notification_sent', this.handleNotificationSent.bind(this))
+    this.register('post_created', { handle: this.handlePostCreated.bind(this) })
+    this.register('comment_added', { handle: this.handleCommentAdded.bind(this) })
+    this.register('user_registered', { handle: this.handleUserRegistered.bind(this) })
+    this.register('notification_sent', { handle: this.handleNotificationSent.bind(this) })
   }
 
   register(eventType: string, handler: EventHandler): void {
@@ -271,65 +271,37 @@ export class OpenClawRouter {
     this.stats.averageProcessingTime = sum / this.processingTimes.length
   }
 
-  async sendToOpenClaw(event: OpenClawEvent): Promise<any> {
-    if (!this.client) {
-      throw new Error('OpenClaw client not initialized')
-    }
-
-    return await this.client.sendAgentMessage(
-      event.message,
-      event.sessionId,
-      event.thinking
-    )
-  }
-
   // 事件处理器
   private async handlePostCreated(event: ForumEvent): Promise<void> {
     const { title, author, content, category } = event.data
-    
+
     const message = `📝 新帖子创建\n\n标题: ${title}\n作者: ${author}\n分类: ${category}\n\n内容: ${content.substring(0, 200)}...`
-    
-    await this.sendToOpenClaw({
-      message,
-      sessionId: 'system',
-      thinking: 'low'
-    })
+
+    return await this.client.sendAgentMessage(message, 'system', 'low')
   }
 
   private async handleCommentAdded(event: ForumEvent): Promise<void> {
     const { postTitle, author, content, postId } = event.data
-    
+
     const message = `💬 新评论\n\n帖子: ${postTitle}\n评论者: ${author}\n\n内容: ${content.substring(0, 200)}...`
-    
-    await this.sendToOpenClaw({
-      message,
-      sessionId: 'system',
-      thinking: 'low'
-    })
+
+    return await this.client.sendAgentMessage(message, 'system', 'low')
   }
 
   private async handleUserRegistered(event: ForumEvent): Promise<void> {
     const { username, email } = event.data
-    
+
     const message = `👤 新用户注册\n\n用户名: ${username}\n邮箱: ${email}\n\n欢迎加入云纽论坛！`
-    
-    await this.sendToOpenClaw({
-      message,
-      sessionId: 'system',
-      thinking: 'low'
-    })
+
+    return await this.client.sendAgentMessage(message, 'system', 'low')
   }
 
   private async handleNotificationSent(event: ForumEvent): Promise<void> {
     const { title, message: content, recipient } = event.data
-    
+
     const message = `🔔 系统通知\n\n收件人: ${recipient}\n标题: ${title}\n\n${content}`
-    
-    await this.sendToOpenClaw({
-      message,
-      sessionId: 'system',
-      thinking: 'low'
-    })
+
+    return await this.client.sendAgentMessage(message, 'system', 'low')
   }
 
   // 死信队列管理

@@ -347,10 +347,3 @@ export class ProtocolAdapter {
     }
   }
 }
-
-// 导出所有类型和类
-export {
-  DataTransformer,
-  SchemaValidator,
-  ProtocolAdapter
-}

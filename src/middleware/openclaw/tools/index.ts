@@ -51,9 +51,9 @@ interface ManagementParams {
 
 // 工具基类
 export abstract class BaseTool implements OpenClawTool {
-  name: string
-  description: string
-  parameters: any
+  name!: string
+  description!: string
+  parameters!: any
   protected env: Env
   protected client: OpenClawClient
 
@@ -144,7 +144,7 @@ export class SearchTool extends BaseTool {
   }
 
   private async searchPosts(query: string, limit: number, offset: number, filters: Record<string, any>): Promise<{ results: any[]; total: number }> {
-    const results = await env.DB.prepare(`
+    const results = await this.env.DB.prepare(`
       SELECT 
         p.*,
         u.username as author_name,
@@ -169,7 +169,7 @@ export class SearchTool extends BaseTool {
       offset
     ).all()
 
-    const countResult = await env.DB.prepare(`
+    const countResult = await this.env.DB.prepare(`
       SELECT COUNT(*) as count
       FROM posts p
       WHERE 
@@ -192,7 +192,7 @@ export class SearchTool extends BaseTool {
   }
 
   private async searchUsers(query: string, limit: number, offset: number, filters: Record<string, any>): Promise<{ results: any[]; total: number }> {
-    const results = await env.DB.prepare(`
+    const results = await this.env.DB.prepare(`
       SELECT id, username, email, avatar, bio, role, created_at
       FROM users
       WHERE 
@@ -208,7 +208,7 @@ export class SearchTool extends BaseTool {
       offset
     ).all()
 
-    const countResult = await env.DB.prepare(`
+    const countResult = await this.env.DB.prepare(`
       SELECT COUNT(*) as count
       FROM users
       WHERE 
@@ -227,7 +227,7 @@ export class SearchTool extends BaseTool {
   }
 
   private async searchComments(query: string, limit: number, offset: number, filters: Record<string, any>): Promise<{ results: any[]; total: number }> {
-    const results = await env.DB.prepare(`
+    const results = await this.env.DB.prepare(`
       SELECT 
         c.*,
         u.username as author_name,
@@ -251,7 +251,7 @@ export class SearchTool extends BaseTool {
       offset
     ).all()
 
-    const countResult = await env.DB.prepare(`
+    const countResult = await this.env.DB.prepare(`
       SELECT COUNT(*) as count
       FROM comments c
       WHERE 
@@ -273,7 +273,7 @@ export class SearchTool extends BaseTool {
   }
 
   private async searchTags(query: string, limit: number, offset: number): Promise<{ results: any[]; total: number }> {
-    const results = await env.DB.prepare(`
+    const results = await this.env.DB.prepare(`
       SELECT t.*, COUNT(pt.post_id) as post_count
       FROM tags t
       LEFT JOIN post_tags pt ON t.id = pt.tag_id
@@ -287,7 +287,7 @@ export class SearchTool extends BaseTool {
       offset
     ).all()
 
-    const countResult = await env.DB.prepare(`
+    const countResult = await this.env.DB.prepare(`
       SELECT COUNT(*) as count
       FROM tags
       WHERE name LIKE ?
@@ -358,7 +358,7 @@ export class CreateTool extends BaseTool {
     const { title, content, categoryId, tags = [], authorId } = params
 
     // 验证分类是否存在
-    const category = await env.DB.prepare(
+    const category = await this.env.DB.prepare(
       'SELECT * FROM categories WHERE id = ?'
     ).bind(categoryId).first()
 
@@ -370,7 +370,7 @@ export class CreateTool extends BaseTool {
     const postId = `post-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
     const now = Date.now()
 
-    await env.DB.prepare(`
+    await this.env.DB.prepare(`
       INSERT INTO posts (id, title, content, author_id, category_id, status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, 'published', ?, ?)
     `).bind(
@@ -386,20 +386,20 @@ export class CreateTool extends BaseTool {
     if (tags.length > 0) {
       for (const tagName of tags) {
         // 获取或创建标签
-        let tag = await env.DB.prepare(
+        let tag = await this.env.DB.prepare(
           'SELECT * FROM tags WHERE name = ?'
         ).bind(tagName).first()
 
         if (!tag) {
           const tagId = `tag-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-          await env.DB.prepare(
+          await this.env.DB.prepare(
             'INSERT INTO tags (id, name, created_at) VALUES (?, ?, ?)'
           ).bind(tagId, tagName, now).run()
           tag = { id: tagId }
         }
 
         // 关联标签
-        await env.DB.prepare(
+        await this.env.DB.prepare(
           'INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)'
         ).bind(postId, tag.id).run()
       }
@@ -412,7 +412,7 @@ export class CreateTool extends BaseTool {
     const { postId, content, authorId, parentId } = params
 
     // 验证帖子是否存在
-    const post = await env.DB.prepare(
+    const post = await this.env.DB.prepare(
       'SELECT * FROM posts WHERE id = ?'
     ).bind(postId).first()
 
@@ -424,7 +424,7 @@ export class CreateTool extends BaseTool {
     const commentId = `comment-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
     const now = Date.now()
 
-    await env.DB.prepare(`
+    await this.env.DB.prepare(`
       INSERT INTO comments (id, post_id, content, author_id, parent_id, status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)
     `).bind(
@@ -446,7 +446,7 @@ export class CreateTool extends BaseTool {
     const categoryId = `category-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
     const now = Date.now()
 
-    await env.DB.prepare(`
+    await this.env.DB.prepare(`
       INSERT INTO categories (id, name, description, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?)
     `).bind(
@@ -464,7 +464,7 @@ export class CreateTool extends BaseTool {
     const { name, description } = data
 
     // 检查标签是否已存在
-    const existing = await env.DB.prepare(
+    const existing = await this.env.DB.prepare(
       'SELECT * FROM tags WHERE name = ?'
     ).bind(name).first()
 
@@ -475,7 +475,7 @@ export class CreateTool extends BaseTool {
     const tagId = `tag-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
     const now = Date.now()
 
-    await env.DB.prepare(`
+    await this.env.DB.prepare(`
       INSERT INTO tags (id, name, description, created_at)
       VALUES (?, ?, ?, ?)
     `).bind(
@@ -557,7 +557,7 @@ export class StatsTool extends BaseTool {
     const now = Date.now()
     const timeRange = this.getTimeRange(period, startDate, endDate, now)
 
-    const result = await env.DB.prepare(`
+    const result = await this.env.DB.prepare(`
       SELECT 
         COUNT(*) as total,
         COUNT(CASE WHEN created_at >= ? THEN 1 END) as new_users,
@@ -581,7 +581,7 @@ export class StatsTool extends BaseTool {
     const now = Date.now()
     const timeRange = this.getTimeRange(period, startDate, endDate, now)
 
-    const result = await env.DB.prepare(`
+    const result = await this.env.DB.prepare(`
       SELECT 
         COUNT(*) as total,
         COUNT(CASE WHEN created_at >= ? THEN 1 END) as new_posts,
@@ -607,7 +607,7 @@ export class StatsTool extends BaseTool {
     const now = Date.now()
     const timeRange = this.getTimeRange(period, startDate, endDate, now)
 
-    const result = await env.DB.prepare(`
+    const result = await this.env.DB.prepare(`
       SELECT 
         COUNT(*) as total,
         COUNT(CASE WHEN created_at >= ? THEN 1 END) as new_comments,
@@ -633,15 +633,15 @@ export class StatsTool extends BaseTool {
     const now = Date.now()
     const timeRange = this.getTimeRange(period, startDate, endDate, now)
 
-    const posts = await env.DB.prepare(
+    const posts = await this.env.DB.prepare(
       'SELECT COUNT(*) as count FROM posts WHERE created_at >= ? AND created_at <= ?'
     ).bind(timeRange.start, timeRange.end).first() as any
 
-    const comments = await env.DB.prepare(
+    const comments = await this.env.DB.prepare(
       'SELECT COUNT(*) as count FROM comments WHERE created_at >= ? AND created_at <= ?'
     ).bind(timeRange.start, timeRange.end).first() as any
 
-    const users = await env.DB.prepare(
+    const users = await this.env.DB.prepare(
       'SELECT COUNT(DISTINCT author_id) as count FROM posts WHERE created_at >= ? AND created_at <= ?'
     ).bind(timeRange.start, timeRange.end).first() as any
 
@@ -658,7 +658,7 @@ export class StatsTool extends BaseTool {
     const timeRange = this.getTimeRange(period, startDate, endDate, now)
 
     // 按天统计
-    const dailyStats = await env.DB.prepare(`
+    const dailyStats = await this.env.DB.prepare(`
       SELECT 
         DATE(created_at / 1000, 'unixepoch') as date,
         COUNT(*) as posts
@@ -670,7 +670,7 @@ export class StatsTool extends BaseTool {
     `).bind(timeRange.start, timeRange.end).all()
 
     // 热门标签
-    const popularTags = await env.DB.prepare(`
+    const popularTags = await this.env.DB.prepare(`
       SELECT 
         t.name,
         COUNT(pt.post_id) as count
@@ -684,7 +684,7 @@ export class StatsTool extends BaseTool {
     `).bind(timeRange.start, timeRange.end).all()
 
     // 活跃用户
-    const activeUsers = await env.DB.prepare(`
+    const activeUsers = await this.env.DB.prepare(`
       SELECT 
         u.username,
         COUNT(p.id) as post_count,
@@ -812,7 +812,7 @@ export class ManagementTool extends BaseTool {
     const table = targetType === 'post' ? 'posts' : 'comments'
     const now = Date.now()
 
-    await env.DB.prepare(`
+    await this.env.DB.prepare(`
       UPDATE ${table}
       SET status = 'approved', updated_at = ?
       WHERE id = ?
@@ -825,7 +825,7 @@ export class ManagementTool extends BaseTool {
     const table = targetType === 'post' ? 'posts' : 'comments'
     const now = Date.now()
 
-    await env.DB.prepare(`
+    await this.env.DB.prepare(`
       UPDATE ${table}
       SET status = 'rejected', updated_at = ?
       WHERE id = ?
@@ -837,7 +837,7 @@ export class ManagementTool extends BaseTool {
   private async delete(targetType: string, targetId: string, reason: string | undefined, env: Env): Promise<any> {
     const table = targetType === 'post' ? 'posts' : 'comments'
 
-    await env.DB.prepare(
+    await this.env.DB.prepare(
       'DELETE FROM ?? WHERE id = ?'
     ).bind(table, targetId).run()
 
@@ -845,7 +845,7 @@ export class ManagementTool extends BaseTool {
   }
 
   private async ban(userId: string, reason: string | undefined, env: Env): Promise<any> {
-    await env.DB.prepare(`
+    await this.env.DB.prepare(`
       UPDATE users
       SET status = 'banned', updated_at = ?
       WHERE id = ?
@@ -855,7 +855,7 @@ export class ManagementTool extends BaseTool {
   }
 
   private async unban(userId: string, env: Env): Promise<any> {
-    await env.DB.prepare(`
+    await this.env.DB.prepare(`
       UPDATE users
       SET status = 'active', updated_at = ?
       WHERE id = ?
@@ -865,7 +865,7 @@ export class ManagementTool extends BaseTool {
   }
 
   private async updateRole(userId: string, roleId: string, env: Env): Promise<any> {
-    await env.DB.prepare(`
+    await this.env.DB.prepare(`
       UPDATE users
       SET role = ?, updated_at = ?
       WHERE id = ?
@@ -910,13 +910,4 @@ export class ToolRegistry {
       parameters: tool.parameters
     }))
   }
-}
-
-// 导出所有工具
-export {
-  SearchTool,
-  CreateTool,
-  StatsTool,
-  ManagementTool,
-  ToolRegistry
 }

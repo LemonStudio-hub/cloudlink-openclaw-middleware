@@ -51,7 +51,7 @@ export class PostEventHandler extends BaseEventHandler {
     const post = event.data as ForumPost
     
     // 验证数据
-    const validation = this.transformer.postToOpenClawMessage(post)
+    const validation = DataTransformer.postToOpenClawMessage(post)
     
     const message = `📝 **新帖子创建**\n\n` +
                     `**标题**: ${post.title}\n` +
@@ -419,7 +419,7 @@ export class NotificationEventHandler extends BaseEventHandler {
   }
 
   private async sendNotification(notification: ForumNotification): Promise<void> {
-    const message = this.transformer.notificationToOpenClawMessage(notification)
+    const message = DataTransformer.notificationToOpenClawMessage(notification)
     
     await this.sendToOpenClaw(
       message.content,
@@ -470,13 +470,4 @@ export class EventHandlerFactory {
     
     return null
   }
-}
-
-// 导出所有处理器
-export {
-  PostEventHandler,
-  CommentEventHandler,
-  UserEventHandler,
-  NotificationEventHandler,
-  EventHandlerFactory
 }

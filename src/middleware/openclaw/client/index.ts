@@ -5,7 +5,7 @@
 
 import type { Env, OpenClawConfig, WebSocketClientState, OpenClawMessage, OpenClawResponse, OpenClawConnectRequest } from '../../../types'
 import { generateId, generateChallenge, signChallenge, sleep, isValidWebSocketUrl } from '../../../utils'
-import { loadConfig, validateConfig } from '../../config'
+import { loadConfig, validateConfig } from '../../../config'
 
 // 连接池配置
 interface ConnectionPoolConfig {
@@ -15,9 +15,75 @@ interface ConnectionPoolConfig {
   maxLifetime: number
 }
 
+// WebSocket 包装器（处理不同环境的 WebSocket API 差异）
+class WebSocketWrapper {
+  private ws: WebSocket
+  private onOpenCallback: (() => void) | null = null
+  private onMessageCallback: ((event: MessageEvent) => void) | null = null
+  private onErrorCallback: ((error: Event) => void) | null = null
+  private onCloseCallback: (() => void) | null = null
+
+  constructor(url: string) {
+    this.ws = new WebSocket(url) as any
+    
+    // 设置事件监听器
+    this.ws.addEventListener('open', () => {
+      if (this.onOpenCallback) {
+        this.onOpenCallback()
+      }
+    })
+    
+    this.ws.addEventListener('message', (event: MessageEvent) => {
+      if (this.onMessageCallback) {
+        this.onMessageCallback(event)
+      }
+    })
+    
+    this.ws.addEventListener('error', (error: Event) => {
+      if (this.onErrorCallback) {
+        this.onErrorCallback(error)
+      }
+    })
+    
+    this.ws.addEventListener('close', () => {
+      if (this.onCloseCallback) {
+        this.onCloseCallback()
+      }
+    })
+  }
+
+  set onopen(callback: () => void) {
+    this.onOpenCallback = callback
+  }
+
+  set onmessage(callback: (event: MessageEvent) => void) {
+    this.onMessageCallback = callback
+  }
+
+  set onerror(callback: (error: Event) => void) {
+    this.onErrorCallback = callback
+  }
+
+  set onclose(callback: () => void) {
+    this.onCloseCallback = callback
+  }
+
+  send(data: string): void {
+    this.ws.send(data)
+  }
+
+  close(): void {
+    this.ws.close()
+  }
+
+  get readyState(): number {
+    return this.ws.readyState
+  }
+}
+
 // 连接实例
 interface ConnectionInstance {
-  ws: WebSocket
+  ws: WebSocketWrapper
   id: string
   createdAt: number
   lastUsed: number
@@ -59,7 +125,7 @@ export class OpenClawClient {
   private heartbeatConfig: HeartbeatConfig
   
   // 主连接
-  private mainConnection: WebSocket | null = null
+  private mainConnection: WebSocketWrapper | null = null
   
   // 消息队列（带优先级）
   private messageQueue: Array<{ message: OpenClawMessage; priority: number; resolve: (value: any) => void; reject: (reason: any) => void }> = []
@@ -109,7 +175,7 @@ export class OpenClawClient {
 
     try {
       // 创建主连接
-      this.mainConnection = new WebSocket(this.config.GATEWAY_URL)
+      this.mainConnection = new WebSocketWrapper(this.config.GATEWAY_URL)
       
       this.mainConnection.onopen = () => this.handleOpen()
       this.mainConnection.onmessage = (event) => this.handleMessage(event)
@@ -285,7 +351,7 @@ export class OpenClawClient {
     }
 
     try {
-      const ws = new WebSocket(this.config.GATEWAY_URL)
+      const ws = new WebSocketWrapper(this.config.GATEWAY_URL)
       const id = generateId()
       const now = Date.now()
 
