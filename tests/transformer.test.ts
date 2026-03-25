@@ -42,12 +42,12 @@ describe('SchemaValidator', () => {
 
     it('应该验证类型', () => {
       expect(SchemaValidator.validateType('string', 'string')).toBe(true)
-      expect(SchemaValidator.validateType('number', 123)).toBe(true)
-      expect(SchemaValidator.validateType('boolean', true)).toBe(true)
-      expect(SchemaValidator.validateType('array', [1, 2, 3])).toBe(true)
-      expect(SchemaValidator.validateType('object', {})).toBe(true)
-      expect(SchemaValidator.validateType('string', 123)).toBe(false)
-      expect(SchemaValidator.validateType('number', '123')).toBe(false)
+      expect(SchemaValidator.validateType(123, 'number')).toBe(true)
+      expect(SchemaValidator.validateType(true, 'boolean')).toBe(true)
+      expect(SchemaValidator.validateType([1, 2, 3], 'array')).toBe(true)
+      expect(SchemaValidator.validateType({}, 'object')).toBe(true)
+      expect(SchemaValidator.validateType(123, 'string')).toBe(false)
+      expect(SchemaValidator.validateType('123', 'number')).toBe(false)
     })
   })
 
@@ -252,7 +252,7 @@ describe('DataTransformer', () => {
       expect(result.type).toBe('markdown')
       expect(result.content).toContain('测试通知')
       expect(result.content).toContain('这是一个测试通知')
-      expect(result.content).toContain('user-1')
+      expect(result.metadata?.recipientId).toBe('user-1')
       expect(result.content).toContain('normal')
     })
 

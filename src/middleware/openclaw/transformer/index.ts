@@ -198,7 +198,11 @@ export class DataTransformer {
       type: 'markdown',
       content: `${priorityEmoji} ${typeEmoji} **${notification.title}**\n\n` +
                `${notification.message}\n\n` +
-               `*优先级: ${notification.priority}*`
+               `*优先级: ${notification.priority}*`,
+      metadata: {
+        recipientId: notification.recipientId || notification.recipient || 'unknown',
+        senderId: notification.senderId || 'system'
+      }
     }
   }
 
