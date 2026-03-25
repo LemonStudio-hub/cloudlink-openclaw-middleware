@@ -1,0 +1,32 @@
+name = "cloudlink-openclaw-middleware"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+
+# OpenClaw 配置
+OPENCLAW_GATEWAY_URL = "ws://localhost:18789"
+OPENCLAW_DEVICE_ID = "cloudlink-forum"
+OPENCLAW_CHANNELS = "slack,discord,telegram"
+OPENCLAW_THINKING = "medium"
+OPENCLAW_RATE_LIMIT = "100"
+OPENCLAW_RATE_WINDOW = "60"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cloudlink-middleware-db"
+database_id = "your-database-id"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "your-kv-namespace-id"
+
+[[queues.producers]]
+binding = "OPENCLAW_QUEUE"
+queue = "cloudlink-openclaw-queue"
+
+[[routes]]
+pattern = "openclaw-middleware.winuel.com/*"
+zone_name = "winuel.com"
